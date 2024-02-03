@@ -1,0 +1,178 @@
+doctype html
+html
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css')
+  body
+    .container
+      h1 List Page
+
+      // Add Button
+      a.btn.btn-primary.mb-3(href='/add') Add
+
+      // Table
+      table.table
+        thead
+          tr
+            th First Name
+            th Last Name
+            th Position
+            th Created At
+            th Actions
+        tbody(id='items-table')
+
+    // Edit Employee Modal
+    .modal.fade#editEmployeeModal(tabindex="-1", role="dialog", aria-labelledby="editEmployeeModalLabel", aria-hidden="true")
+      .modal-dialog(role="document")
+        .modal-content
+          .modal-header
+            h5.modal-title#editEmployeeModalLabel Edit Employee
+            button.close(type="button", data-dismiss="modal", aria-label="Close")
+              span(aria-hidden="true") &times;
+          .modal-body
+            form#editEmployeeForm
+              input#idForm(type="hidden")
+              .form-group
+                label(for="editFirstName") First Name
+                input#editFirstName.form-control(type="text", required)
+              .form-group
+                label(for="editLastName") Last Name
+                input#editLastName.form-control(type="text", required)
+              .form-group
+                label(for="editPosition") Position
+                input#editPosition.form-control(type="text", required)
+              button.btn.btn-primary(type="submit") Save
+
+    script(src='https://code.jquery.com/jquery-3.5.1.slim.min.js')
+    script(src='https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js')
+    script(src='https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js')
+    script(src='https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js')
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.js")
+
+    script.
+      // Fetch data and update table
+      const updateTable = (items) => {
+        const tableBody = document.getElementById('items-table');
+        tableBody.innerHTML = ''; // Clear the existing table rows
+        items.forEach(item => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td> ${item.first_name}</td>
+            <td> ${item.last_name}</td>
+            <td> ${item.position}</td>
+            <td> ${item.created_at}</td>
+            <td>
+              <a class="btn btn-sm btn-primary edit-btn" data-id="${item._id}", data-toggle="modal", data-target="#editEmployeeModal"> Edit</a>
+              <a class="btn btn-sm btn-danger delete-btn" data-id="${item._id}"> Delete </a>
+            </td>
+          `;
+          tableBody.appendChild(row);
+        });
+      };
+
+      axios.get('/employee')
+        .then(response => {
+          const items = response.data.data; // Assuming the data is returned in a 'data' property
+          updateTable(items);
+        })
+        .catch(error => {
+          console.error(error);
+        });
+
+      // Listen for 'employeeInserted' event
+      const socket = io("http://localhost:3000");
+
+      socket.on('employeeInserted', (employee) => {
+        const tableBody = document.getElementById('items-table');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${employee.first_name}</td>
+          <td>${employee.last_name}</td>
+          <td>${employee.position}</td>
+          <td>${employee.created_at}<td>
+          <td>
+            <a class="btn btn-sm btn-primary edit-btn" data-id="${item._id}", data-toggle="modal", data-target="#editEmployeeModal"> Edit </a>
+            <a class="btn btn-sm btn-danger delete-btn" data-id="${item._id}"> Delete </a>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+
+      const tableBody = document.getElementById('items-table');
+
+      // Handle click event on edit button inside the table
+      tableBody.addEventListener('click', async (event) => {
+        if (event.target.classList.contains('edit-btn')) {
+          event.preventDefault(); // Prevent the default behavior of the anchor tag
+
+          const employeeId = event.target.getAttribute('data-id');
+          // Fetch the employee details using the employeeId and populate the modal form
+          try {
+            const response = await axios.get(`/employee/show`, { data: { _id: employeeId } });
+            const employee = response.data;
+            
+            document.getElementById('idForm').value = employee.data._id;
+            document.getElementById('editFirstName').value = employee.data.first_name;
+            document.getElementById('editLastName').value = employee.data.last_name;
+            document.getElementById('editPosition').value = employee.data.position;
+
+            // Submit the form to update the employee details
+            const editEmployeeForm = document.getElementById('editEmployeeForm');
+            editEmployeeForm.addEventListener('submit', async (event) => {
+              event.preventDefault(); // Prevent the default form submission behavior
+              const employeeId = event.target.getAttribute('data-id');
+              const updatedEmployee = {
+                _id: document.getElementById('idForm').value,
+                first_name: document.getElementById('editFirstName').value,
+                last_name: document.getElementById('editLastName').value,
+                position: document.getElementById('editPosition').value,
+              };
+
+              console.log(updatedEmployee)
+
+              try {
+                const response = await axios.put(`/employee/update`, updatedEmployee);
+                // Handle success
+                console.log(response.data);
+                // Close the modal
+                $('#editEmployeeModal').modal('hide');
+                // Refresh the table
+                axios.get('/employee')
+                  .then(response => {
+                    const items = response.data.data;
+                    updateTable(items);
+                  })
+                  .catch(error => {
+                    console.error(error);
+                  });
+              } catch (error) {
+                // Handle error
+                console.error(error);
+              }
+            });
+          } catch (error) {
+            // Handle error
+            console.error(error);
+          }
+        }
+      });
+
+      // Handle click event on delete button inside the table
+      tableBody.addEventListener('click', async (event) => {
+        if (event.target.classList.contains('delete-btn')) {
+          event.preventDefault(); // Prevent the default behavior of the anchor tag
+
+          const employeeId = event.target.getAttribute('data-id');
+          try {
+            const response = await axios.delete(`/employee/destroy`, { data: { _id: employeeId } });
+            // Handle success
+            console.log(response.data);
+            // Remove the deleted row from the table
+            event.target.closest('tr').remove();
+          } catch (error) {
+            // Handle error
+            console.error(error);
+          }
+        }
+      });

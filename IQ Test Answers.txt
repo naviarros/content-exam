@@ -1,0 +1,7 @@
+IQ Test Answers:
+
+1. 3 - because based on the sequence on 4 corners
+2. 2 - because of the pattern of small to bigger shape
+3. 3 - because when you combine 2 squares they'll merged.
+4. 2 - because as you can see that some shapes are shaded so that the last piece was not shaded objects
+5. 2 - because they go on the same direction.

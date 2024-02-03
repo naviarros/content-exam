@@ -1,0 +1,7 @@
+{
+    "_id" : ObjectId("65bdce268f859c443d56a106"),
+    "username" : "sample",
+    "password" : "$2b$10$0no3lBsKLnfngAOR5WFPCu8ni8zBvn3r5.sU4feuYaROUTL9ZOUc2",
+    "name" : "sample",
+    "created_at" : ISODate("2024-02-03T05:24:54.800+0000")
+}

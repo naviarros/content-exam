@@ -1,0 +1,7 @@
+{
+    "_id" : ObjectId("65be07a256bddad1159c5289"),
+    "first_name" : "Ivna",
+    "last_name" : "Sorra",
+    "position" : "IT WEb",
+    "updated_at" : ISODate("2024-02-03T09:30:10.840+0000")
+}
